@@ -3,177 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Fruit Crypto Farm Pro</title>
+    <title>Fruit Crypto Farm Final</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://adsgram.ai/sdk-v1.js"></script>
     <style>
-        :root { --primary: #2ecc71; --secondary: #f1c40f; --bg: #f0f3f5; --card: #ffffff; --text: #2c3e50; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 90px; }
+        :root { --p: #2ecc71; --s: #f1c40f; --bg: #f5f7f9; }
+        body { background: var(--bg); font-family: sans-serif; margin: 0; padding-bottom: 80px; }
         
-        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Fast Loader: Sirf 0.3 second ke liye dikhega */
+        #loader { position: fixed; inset: 0; background: white; z-index: 100; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        
+        .header { background: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .coins { background: #fff9c4; color: #f39c12; padding: 5px 15px; border-radius: 20px; font-weight: bold; }
 
-        .page { display: none; padding: 20px; animation: fadeIn 0.3s ease; }
+        .page { display: none; padding: 15px; }
         .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .coin-badge { background: #fff9c4; color: #f9a825; padding: 6px 12px; border-radius: 25px; border: 1px solid #fff176; font-weight: 800; display: flex; align-items: center; gap: 5px; }
+        .card { background: white; border-radius: 15px; padding: 15px; text-align: center; border: 1px solid #ddd; margin-bottom: 15px; }
+        .h-btn { background: var(--s); border: none; padding: 12px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; box-shadow: 0 3px 0 #d4ac0d; }
+        .h-btn:disabled { background: #ccc; box-shadow: none; color: #666; }
 
-        .card { background: var(--card); border-radius: 20px; padding: 15px; border: 1px solid #edf2f7; text-align: center; }
-        .farm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        
-        .harvest-btn { background: var(--secondary); border: none; padding: 14px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; color: #5d4037; box-shadow: 0 4px 0 #d4ac0d; }
-        .harvest-btn:disabled { background: #d5d8dc; box-shadow: none; color: #7f8c8d; }
-
-        .nav-bar { position: fixed; bottom: 15px; left: 15px; right: 15px; background: white; display: flex; justify-content: space-around; padding: 12px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
-        .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #94a3b8; cursor: pointer; }
-        .nav-item.active { color: var(--primary); font-weight: bold; }
+        .nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #ddd; }
+        .nav-item { font-size: 12px; color: #888; text-align: center; flex: 1; }
+        .nav-item.active { color: var(--p); font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="loader"><div class="spinner"></div><p>Farm Loading...</p></div>
+<div id="loader">🚀 Starting...</div>
 
-    <div class="header">
-        <div style="font-weight:bold;">👋 <span id="u-name">Farmer</span></div>
-        <div class="coin-badge">💰 <span id="balance">0</span></div>
-    </div>
+<div class="header">
+    <div id="u-name"><b>Farmer</b></div>
+    <div class="coins">💰 <span id="balance">0</span></div>
+</div>
 
-    <div id="farm" class="page active">
-        <div class="farm-grid">
-            <div class="card">
-                <b>Banana Tree</b><br>
-                <img src="https://cdn-icons-png.flaticon.com/512/2329/2329865.png" style="width: 70px; margin: 10px;">
-                <button class="harvest-btn" id="hBtn" onclick="runAd()">Harvest 40</button>
-                <div id="timer" style="font-size: 12px; margin-top: 10px; color: #2ecc71;">Ready!</div>
-            </div>
-            <div class="card" id="slot-2" style="background: #f8fafc; border: 2px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; min-height: 180px; color: #94a3b8; font-size: 12px;">
-                Locked Slot
-            </div>
-        </div>
-    </div>
-
-    <div id="shop" class="page">
-        <h3>Market</h3>
-        <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-            <div style="text-align:left;"><b>Apple Tree</b><br><small>+100 Coins</small></div>
-            <button onclick="buyApple()" style="background:var(--primary); color:white; border:none; padding:10px 15px; border-radius:10px;">500 💰</button>
-        </div>
-    </div>
-
-    <div id="withdraw" class="page">
+<div id="farm" class="page active">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
         <div class="card">
-            <h3>Withdraw</h3>
-            <p>Min: 50,000 Coins</p>
-            <input type="text" placeholder="TON Address" style="width:90%; padding:10px; margin-bottom:10px; border-radius:10px; border:1px solid #ddd;">
-            <button onclick="tg.showAlert('Need 50,000 coins!')" style="width:100%; background:#3498db; color:white; border:none; padding:12px; border-radius:10px;">Withdraw</button>
+            <b>Banana</b><br>
+            <img src="https://cdn-icons-png.flaticon.com/512/2329/2329865.png" width="60" style="margin:10px;">
+            <button class="h-btn" id="hBtn" onclick="showAd()">Harvest 40</button>
+            <div id="timer" style="font-size:11px; margin-top:5px; color: green;">Ready</div>
         </div>
+        <div class="card" id="slot-2" style="background:#eee; display:flex; align-items:center; justify-content:center; font-size:10px; color:#888;">Locked</div>
     </div>
+</div>
 
-    <div class="nav-bar">
-        <div class="nav-item active" onclick="tab('farm', this)"><span>🌲</span>Farm</div>
-        <div class="nav-item" onclick="tab('shop', this)"><span>🏪</span>Shop</div>
-        <div class="nav-item" onclick="tab('withdraw', this)"><span>₿</span>Wallet</div>
+<div id="shop" class="page">
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="text-align:left;"><b>Apple Tree</b><br><small>100 pts</small></div>
+        <button onclick="buyApple()" style="background:var(--p); color:white; border:none; padding:8px 12px; border-radius:8px;">500 💰</button>
     </div>
+</div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        
-        // Block ID Fixed
-        const AdController = window.Adsgram.init({ blockId: "20692" });
+<div id="withdraw" class="page">
+    <div class="card">
+        <h3>Withdraw</h3>
+        <p>Min: 50k Coins</p>
+        <button onclick="alert('Min limit 50,000!')" style="width:100%; background:#3498db; color:white; border:none; padding:10px; border-radius:8px;">Withdraw</button>
+    </div>
+</div>
 
-        let score = 0;
-        let nextHarvest = 0;
-        let appleUnlocked = false;
+<div class="nav">
+    <div class="nav-item active" onclick="tab('farm', this)">🌲 Farm</div>
+    <div class="nav-item" onclick="tab('shop', this)">🏪 Shop</div>
+    <div class="nav-item" onclick="tab('withdraw', this)">₿ Wallet</div>
+</div>
 
-        const hBtn = document.getElementById('hBtn');
-        const balanceTxt = document.getElementById('balance');
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    
+    // Aapki Block ID: 20692
+    const AdController = window.Adsgram.init({ blockId: "20692" });
 
-        // FAST LOAD: 2 second timer to remove loader if storage is slow
-        const loadTimeout = setTimeout(showGame, 2000);
+    let score = 0;
+    let nextH = 0;
+    let apple = false;
 
-        function showGame() {
-            document.getElementById('loader').style.display = 'none';
-            document.getElementById('u-name').innerText = tg.initDataUnsafe?.user?.first_name || "Farmer";
+    // FORCED LOAD: Game 0.3 sec baad har haal mein khulega
+    setTimeout(() => {
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('u-name').innerText = tg.initDataUnsafe?.user?.first_name || "Farmer";
+        updateUI();
+        setInterval(checkTimer, 1000);
+    }, 300);
+
+    // Sync from Storage (Background mein chalega)
+    tg.CloudStorage.getItems(['s', 't', 'a'], (err, v) => {
+        if(!err && v) {
+            score = v.s ? parseInt(v.s) : 0;
+            nextH = v.t ? parseInt(v.t) : 0;
+            apple = v.a === 'true';
+            updateUI();
         }
+    });
 
-        function init() {
-            tg.CloudStorage.getItems(['score', 'time', 'apple'], (err, val) => {
-                clearTimeout(loadTimeout); // Agar data aa gaya toh timeout cancel
-                if(!err && val) {
-                    score = val.score ? parseInt(val.score) : 0;
-                    nextHarvest = val.time ? parseInt(val.time) : 0;
-                    appleUnlocked = val.apple === 'true';
-                    balanceTxt.innerText = score;
-                    if(appleUnlocked) renderApple();
-                }
-                showGame();
-                startTimer();
-            });
-        }
-        init();
-
-        function tab(id, el) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            el.classList.add('active');
-        }
-
-        function runAd() {
-            hBtn.disabled = true;
-            hBtn.innerText = "Ad Loading...";
-            
-            AdController.show().then(r => {
-                if(r.done) harvest(40);
-                else { hBtn.disabled = false; hBtn.innerText = "Harvest 40"; }
-            }).catch(() => {
-                harvest(40); // Fallback
-                tg.showAlert("Ad server busy, coins added!");
-            });
-        }
-
-        function harvest(pts) {
-            score += pts;
-            balanceTxt.innerText = score;
-            nextHarvest = Date.now() + 180000;
-            tg.CloudStorage.setItem('score', score.toString());
-            tg.CloudStorage.setItem('time', nextHarvest.toString());
-        }
-
-        function buyApple() {
-            if(score >= 500 && !appleUnlocked) {
-                score -= 500;
-                appleUnlocked = true;
-                tg.CloudStorage.setItem('score', score.toString());
-                tg.CloudStorage.setItem('apple', 'true');
-                balanceTxt.innerText = score;
-                renderApple();
-                tg.showAlert("Apple Tree Bought!");
-            }
-        }
-
-        function renderApple() {
-            document.getElementById('slot-2').innerHTML = `<b>Apple Tree</b><br><img src="https://cdn-icons-png.flaticon.com/512/415/415733.png" style="width:70px;"><br><button class="harvest-btn" onclick="harvest(100)">Harvest 100</button>`;
+    function updateUI() {
+        document.getElementById('balance').innerText = score;
+        if(apple) {
+            document.getElementById('slot-2').innerHTML = `<b>Apple</b><br><img src="https://cdn-icons-png.flaticon.com/512/415/415733.png" width="60"><br><button class="h-btn" onclick="harvest(100)">Harvest 100</button>`;
             document.getElementById('slot-2').style.background = "white";
         }
+    }
 
-        function startTimer() {
-            setInterval(() => {
-                const diff = nextHarvest - Date.now();
-                if(diff <= 0) {
-                    hBtn.disabled = false;
-                    hBtn.innerText = "Harvest 40";
-                    document.getElementById('timer').innerText = "Ready!";
-                } else {
-                    hBtn.disabled = true;
-                    document.getElementById('timer').innerText = `Wait: ${Math.ceil(diff/1000)}s`;
-                }
-            }, 1000);
+    function tab(id, el) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+    }
+
+    function showAd() {
+        const btn = document.getElementById('hBtn');
+        btn.disabled = true;
+        btn.innerText = "Loading...";
+
+        AdController.show().then(r => {
+            if(r.done) harvest(40);
+            else { btn.disabled = false; btn.innerText = "Harvest 40"; }
+        }).catch(() => {
+            harvest(40); // Backup: Coins de do agar ad na chale
+        });
+    }
+
+    function harvest(pts) {
+        score += pts;
+        nextH = Date.now() + 180000; // 3 min
+        updateUI();
+        tg.CloudStorage.setItem('s', score.toString());
+        tg.CloudStorage.setItem('t', nextH.toString());
+    }
+
+    function buyApple() {
+        if(score >= 500 && !apple) {
+            score -= 500; apple = true;
+            tg.CloudStorage.setItem('s', score.toString());
+            tg.CloudStorage.setItem('a', 'true');
+            updateUI();
+            tg.showAlert("Apple Tree Unlocked!");
         }
-    </script>
+    }
+
+    function checkTimer() {
+        const btn = document.getElementById('hBtn');
+        const diff = nextH - Date.now();
+        if(diff <= 0) {
+            btn.disabled = false;
+            btn.innerText = "Harvest 40";
+            document.getElementById('timer').innerText = "Ready";
+        } else {
+            btn.disabled = true;
+            document.getElementById('timer').innerText = `Wait: ${Math.ceil(diff/1000)}s`;
+        }
+    }
+</script>
 </body>
 </html>
