@@ -1,1 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: #f0f4f1; font-family: sans-serif; margin: 0; text-align: center; }
+        .top-bar { background: #4caf50; color: white; padding: 15px; display: flex; justify-content: space-between; font-weight: bold; }
+        .farm-container { background: white; margin: 15px; border-radius: 15px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .slot { border: 2px dashed #ddd; border-radius: 10px; padding: 10px; background: #fafafa; position: relative; }
+        .active-slot { border: 2px solid #4caf50; background: #fff; }
+        img { width: 80px; }
+        .harvest-btn { background: #ffca28; border: none; padding: 10px; border-radius: 5px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 5px; }
+        .harvest-btn:disabled { background: #ccc; }
+        .footer-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #ddd; }
+    </style>
+</head>
+<body>
 
+<div class="top-bar">
+    <span>Farmer: Huzaifa</span>
+    <span>💰 <span id="coins">0</span></span>
+</div>
+
+<div class="farm-container">
+    <h3>My Plantations</h3>
+    <div class="grid">
+        <div class="slot active-slot">
+            <img src="https://cdn-icons-png.flaticon.com/512/2329/2329865.png">
+            <p style="font-size: 12px; margin: 5px 0;">Banana Tree</p>
+            <button class="harvest-btn" id="hBtn" onclick="harvest()">Harvest 40 pts</button>
+            <p id="timer" style="font-size: 10px; color: #666;"></p>
+        </div>
+        <div class="slot">Empty Slot</div>
+        <div class="slot">Empty Slot</div>
+        <div class="slot">Empty Slot</div>
+    </div>
+</div>
+
+<div class="footer-nav">
+    <span>🌳 Farm</span>
+    <span>🛒 Shop</span>
+    <span>🏦 Wallet</span>
+</div>
+
+<script>
+    let balance = 0;
+    function harvest() {
+        let btn = document.getElementById('hBtn');
+        let timerDisplay = document.getElementById('timer');
+        
+        balance += 40;
+        document.getElementById('coins').innerText = balance;
+        
+        btn.disabled = true;
+        let seconds = 180; // 3 minutes
+        
+        let countdown = setInterval(() => {
+            seconds--;
+            let mins = Math.floor(seconds / 60);
+            let secs = seconds % 60;
+            timerDisplay.innerText = "Wait: " + mins + "m " + secs + "s";
+            
+            if (seconds <= 0) {
+                clearInterval(countdown);
+                btn.disabled = false;
+                timerDisplay.innerText = "Ready!";
+            }
+        }, 1000);
+    }
+</script>
+
+</body>
+</html>
