@@ -5,26 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Crypto Spin Wheel</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://adsgram.ai/sdk-v1.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-        :root { --bg: #120522; --glow: #a020f0; --btn: #7b1fa2; --gold: #ffeb3b; }
+        :root { --bg: #0f051d; --glow: #bc13fe; --btn: #8a2be2; --gold: #ffd700; }
         body { background: var(--bg); color: white; font-family: 'Orbitron', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
         
-        .header { width: 85%; display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--glow); }
-        .balance { color: var(--gold); font-weight: bold; font-size: 1.2rem; }
+        /* Header */
+        .header { width: 85%; display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--glow); box-shadow: 0 0 10px rgba(188, 19, 254, 0.2); }
+        .balance { color: var(--gold); font-weight: bold; font-size: 1.2rem; text-shadow: 0 0 5px var(--gold); }
 
-        .wheel-box { position: relative; width: 300px; height: 300px; margin-bottom: 30px; }
-        #wheel { width: 100%; height: 100%; border-radius: 50%; border: 5px solid var(--glow); transition: transform 4s cubic-bezier(0.1, 0.7, 0.1, 1); background: conic-gradient(#e74c3c 0% 16%, #3498db 16% 33%, #2ecc71 33% 50%, #f1c40f 50% 66%, #9b59b6 66% 83%, #e67e22 83% 100%); box-shadow: 0 0 30px var(--glow); }
+        /* Wheel Section */
+        .wheel-box { position: relative; width: 280px; height: 280px; margin-bottom: 30px; }
+        #wheel { width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--glow); transition: transform 4s cubic-bezier(0.1, 0.7, 0.1, 1); background: conic-gradient(#ff416c 0% 16%, #4776e6 16% 33%, #00b09b 33% 50%, #f7971e 50% 66%, #8e2de2 66% 83%, #f00000 83% 100%); box-shadow: 0 0 40px rgba(188, 19, 254, 0.4); }
         
-        .pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 35px; z-index: 10; filter: drop-shadow(0 0 5px white); }
-        .center-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; background: #222; border: 3px solid var(--glow); border-radius: 50%; z-index: 5; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 35px; z-index: 10; }
+        .center-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; background: #1a1a1a; border: 3px solid var(--glow); border-radius: 50%; z-index: 5; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: inset 0 0 10px var(--glow); }
 
-        .spin-btn { background: var(--btn); color: white; border: none; padding: 15px 45px; border-radius: 50px; font-size: 1.5rem; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; box-shadow: 0 0 20px var(--glow); transition: 0.3s; }
-        .spin-btn:active { transform: scale(0.95); }
-        .spin-btn:disabled { background: #444; box-shadow: none; opacity: 0.7; }
+        /* Button */
+        .spin-btn { background: var(--btn); color: white; border: none; padding: 15px 40px; border-radius: 50px; font-size: 1.4rem; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; box-shadow: 0 0 20px var(--glow); transition: 0.3s; }
+        .spin-btn:active { transform: scale(0.9); }
+        .spin-btn:disabled { background: #333; box-shadow: none; opacity: 0.6; }
         
-        .status { margin-top: 20px; font-size: 0.9rem; color: #bbb; }
+        .status { margin-top: 20px; font-size: 0.8rem; color: #888; letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -37,58 +39,67 @@
     <div class="wheel-box">
         <img src="https://cdn-icons-png.flaticon.com/512/8215/8215539.png" class="pointer">
         <div id="wheel"></div>
-        <div class="center-dot" id="center-txt">🎮</div>
+        <div class="center-dot" id="center-txt">?</div>
     </div>
 
-    <button class="spin-btn" id="spinBtn" onclick="initSpin()">SPIN NOW</button>
-    <p class="status" id="msg">Watch an ad to Spin!</p>
+    <button class="spin-btn" id="spinBtn" onclick="handleSpinClick()">SPIN NOW</button>
+    <p class="status" id="msg">AD READY: YES</p>
+
+    <script src="https://adsgram.ai/sdk-v1.js" async onload="initAds()"></script>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         
-        const AdController = window.Adsgram.init({ blockId: "20692" });
-
+        let AdController = null;
         let score = 0;
         let spinning = false;
         let rotation = 0;
 
-        // Load Initial Data
+        // Initialize User Info
         const user = tg.initDataUnsafe?.user;
-        if(user) {
-            document.getElementById('u-name').innerText = user.first_name;
-            document.getElementById('center-txt').innerText = user.first_name.charAt(0).toUpperCase();
-        }
+        document.getElementById('u-name').innerText = user?.first_name || "User";
+        document.getElementById('center-txt').innerText = user?.first_name?.charAt(0).toUpperCase() || "🎮";
 
-        tg.CloudStorage.getItem('spin_score', (err, val) => {
+        // Load Balance
+        tg.CloudStorage.getItem('spin_score_v2', (err, val) => {
             if(!err && val) {
                 score = parseInt(val);
                 document.getElementById('balance').innerText = score;
             }
         });
 
-        function initSpin() {
+        // Adsgram Initialization
+        function initAds() {
+            try {
+                AdController = window.Adsgram.init({ blockId: "20692" });
+                document.getElementById('msg').innerText = "AD SYSTEM: ACTIVE";
+            } catch(e) {
+                console.log("Adsgram Error", e);
+                document.getElementById('msg').innerText = "AD SYSTEM: OFFLINE";
+            }
+        }
+
+        function handleSpinClick() {
             if(spinning) return;
             
             const btn = document.getElementById('spinBtn');
-            const msg = document.getElementById('msg');
-            
             btn.disabled = true;
-            btn.innerText = "LOADING...";
-            msg.innerText = "Connecting to Ad Server...";
+            btn.innerText = "WAIT...";
 
-            AdController.show().then(r => {
-                if(r.done) {
-                    startRotation();
-                } else {
-                    msg.innerText = "Ad not finished!";
-                    btn.disabled = false;
-                    btn.innerText = "SPIN NOW";
-                }
-            }).catch(() => {
-                // Fallback: Agar ad block ho ya na chale toh bhi spin hone do
+            // Agar Adsgram load ho gaya hai, toh ad dikhao
+            if(AdController) {
+                AdController.show().then(r => {
+                    if(r.done) startRotation();
+                    else resetBtn();
+                }).catch(e => {
+                    console.log("Ad show error", e);
+                    startRotation(); // Error par bhi spin hone do
+                });
+            } else {
+                // Agar Adsgram load nahi hua, toh direct spin (Testing ke liye best)
                 startRotation();
-            });
+            }
         }
 
         function startRotation() {
@@ -97,34 +108,39 @@
             const btn = document.getElementById('spinBtn');
             
             btn.innerText = "SPINNING...";
-            const extraDeg = Math.floor(Math.random() * 360) + 1800; // 5 full rounds + random
+            const extraDeg = Math.floor(Math.random() * 360) + 2160; // 6 Rounds
             rotation += extraDeg;
             
             wheel.style.transform = `rotate(${rotation}deg)`;
 
             setTimeout(() => {
                 const finalDeg = rotation % 360;
-                let win = 0;
-                
-                // Simple Prize Logic
-                if(finalDeg >= 0 && finalDeg < 60) win = 100;
-                else if(finalDeg >= 60 && finalDeg < 120) win = 10;
-                else if(finalDeg >= 120 && finalDeg < 180) win = 500;
-                else if(finalDeg >= 180 && finalDeg < 240) win = 50;
-                else if(finalDeg >= 240 && finalDeg < 300) win = 250;
-                else win = 20;
+                let win = calculatePrize(finalDeg);
 
                 score += win;
                 document.getElementById('balance').innerText = score;
-                tg.CloudStorage.setItem('spin_score', score.toString());
+                tg.CloudStorage.setItem('spin_score_v2', score.toString());
                 
-                tg.showAlert(`🎉 You won ${win} coins!`);
+                tg.showAlert(`🎉 Success! You won ${win} coins!`);
                 spinning = false;
-                btn.disabled = false;
-                btn.innerText = "SPIN NOW";
-                document.getElementById('msg').innerText = "Congratulations!";
+                resetBtn();
                 tg.HapticFeedback.notificationOccurred('success');
-            }, 4100);
+            }, 4000);
+        }
+
+        function calculatePrize(deg) {
+            if(deg >= 0 && deg < 60) return 100;
+            if(deg >= 60 && deg < 120) return 10;
+            if(deg >= 120 && deg < 180) return 500;
+            if(deg >= 180 && deg < 240) return 50;
+            if(deg >= 240 && deg < 300) return 250;
+            return 20;
+        }
+
+        function resetBtn() {
+            const btn = document.getElementById('spinBtn');
+            btn.disabled = false;
+            btn.innerText = "SPIN NOW";
         }
     </script>
 </body>
