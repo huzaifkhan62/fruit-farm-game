@@ -5,20 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Crypto Spin Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://adsgram.ai/sdk-v1.js" onerror="handleSDKError()"></script>
+    <script src="https://adsgram.ai/sdk-v1.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
         :root { --bg: #0f051d; --glow: #bc13fe; --btn: #8a2be2; --gold: #ffd700; }
         body { background: var(--bg); color: white; font-family: 'Orbitron', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
-        .header { width: 85%; display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--glow); }
+        
+        .header { width: 85%; display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--glow); box-shadow: 0 0 10px rgba(188, 19, 254, 0.2); }
         .balance { color: var(--gold); font-weight: bold; font-size: 1.2rem; }
+
         .wheel-box { position: relative; width: 280px; height: 280px; margin-bottom: 30px; }
         #wheel { width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--glow); transition: transform 4s cubic-bezier(0.1, 0.7, 0.1, 1); background: conic-gradient(#ff416c 0% 16%, #4776e6 16% 33%, #00b09b 33% 50%, #f7971e 50% 66%, #8e2de2 66% 83%, #f00000 83% 100%); box-shadow: 0 0 40px rgba(188, 19, 254, 0.4); }
+        
         .pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 35px; z-index: 10; }
         .center-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; background: #1a1a1a; border: 3px solid var(--glow); border-radius: 50%; z-index: 5; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+
         .spin-btn { background: var(--btn); color: white; border: none; padding: 15px 40px; border-radius: 50px; font-size: 1.4rem; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; box-shadow: 0 0 20px var(--glow); transition: 0.3s; }
-        .spin-btn:disabled { background: #333; opacity: 0.6; }
-        .status { margin-top: 20px; font-size: 0.8rem; color: #888; }
+        .spin-btn:active { transform: scale(0.95); }
+        .spin-btn:disabled { background: #333; box-shadow: none; opacity: 0.6; cursor: not-allowed; }
+        
+        .status { margin-top: 20px; font-size: 0.8rem; color: #888; letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -35,23 +41,34 @@
     </div>
 
     <button class="spin-btn" id="spinBtn" onclick="handleSpinClick()">SPIN NOW</button>
-    <p class="status" id="msg">AD SYSTEM: READY</p>
+    <p class="status" id="msg">AD SYSTEM: INITIALIZING...</p>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         
-        const BLOCK_ID = "20692"; 
+        const BLOCK_ID = "20692"; // Aapka block ID
         let score = 0;
         let spinning = false;
         let rotation = 0;
+        let AdController = null;
 
-        function handleSDKError() {
-            document.getElementById('msg').innerText = "AD SYSTEM: OFFLINE";
-            console.error("Adsgram SDK failed to load");
+        // Adsgram Setup with TEST MODE ENABLED (debug: true)
+        try {
+            // debug: true karne se Test Ads aana shuru ho jayenge
+            AdController = window.Adsgram.init({ blockId: BLOCK_ID, debug: true });
+            document.getElementById('msg').innerText = "AD SYSTEM: TEST MODE ON";
+        } catch (e) {
+            document.getElementById('msg').innerText = "AD SYSTEM: ERROR";
         }
 
-        tg.CloudStorage.getItem('spin_balance_final', (err, val) => {
+        // User Data
+        const user = tg.initDataUnsafe?.user;
+        document.getElementById('u-name').innerText = user?.first_name || "User";
+        document.getElementById('center-txt').innerText = user?.first_name?.charAt(0).toUpperCase() || "🎮";
+
+        // Load Balance
+        tg.CloudStorage.getItem('spin_balance_v5', (err, val) => {
             if(!err && val) {
                 score = parseInt(val);
                 document.getElementById('balance').innerText = score;
@@ -60,29 +77,29 @@
 
         async function handleSpinClick() {
             if(spinning) return;
+            
             const btn = document.getElementById('spinBtn');
+            const msg = document.getElementById('msg');
+            
             btn.disabled = true;
-            btn.innerText = "LOADING...";
+            btn.innerText = "LOADING AD...";
 
-            // Extra check to see if Adsgram exists
-            if (typeof window.Adsgram !== 'undefined') {
-                const AdController = window.Adsgram.init({ blockId: BLOCK_ID });
+            if(AdController) {
                 try {
+                    // Test Ad dikhane ki koshish
                     const result = await AdController.show();
                     if(result.done) {
                         startRotation();
                     } else {
-                        tg.showAlert("Finish the ad to spin!");
+                        tg.showAlert("❌ Finish the test ad to spin!");
                         resetBtn();
                     }
-                } catch (e) {
-                    // Fallback if ad cannot be shown (e.g. no ads available)
-                    console.log("Ad show failed, fallback to spin");
+                } catch (error) {
+                    console.log("Ad System Error:", error);
+                    // Agar test ad bhi nahi aa raha, toh code error check karne ke liye spin kar dega
                     startRotation();
                 }
             } else {
-                // If SDK didn't load, allow spin but show warning
-                console.log("Adsgram not found, starting rotation");
                 startRotation();
             }
         }
@@ -91,19 +108,21 @@
             spinning = true;
             const wheel = document.getElementById('wheel');
             const btn = document.getElementById('spinBtn');
+            
             btn.innerText = "SPINNING...";
             
             const extraDeg = Math.floor(Math.random() * 360) + 2520; 
             rotation += extraDeg;
+            
             wheel.style.transform = `rotate(${rotation}deg)`;
 
             setTimeout(() => {
                 const finalDeg = rotation % 360;
-                let win = (finalDeg < 60) ? 100 : (finalDeg < 120) ? 10 : (finalDeg < 180) ? 500 : (finalDeg < 240) ? 50 : (finalDeg < 300) ? 250 : 20;
+                let win = calculatePrize(finalDeg);
 
                 score += win;
                 document.getElementById('balance').innerText = score;
-                tg.CloudStorage.setItem('spin_balance_final', score.toString());
+                tg.CloudStorage.setItem('spin_balance_v5', score.toString());
                 
                 tg.showAlert(`🎉 You won ${win} coins!`);
                 spinning = false;
@@ -112,10 +131,20 @@
             }, 4000);
         }
 
+        function calculatePrize(deg) {
+            if(deg >= 0 && deg < 60) return 100;
+            if(deg >= 60 && deg < 120) return 10;
+            if(deg >= 120 && deg < 180) return 500;
+            if(deg >= 180 && deg < 240) return 50;
+            if(deg >= 240 && deg < 300) return 250;
+            return 20;
+        }
+
         function resetBtn() {
             const btn = document.getElementById('spinBtn');
             btn.disabled = false;
             btn.innerText = "SPIN NOW";
+            document.getElementById('msg').innerText = "AD SYSTEM: TEST MODE ON";
         }
     </script>
 </body>
